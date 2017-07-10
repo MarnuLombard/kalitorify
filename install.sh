@@ -65,7 +65,7 @@ check_required() {
     for package in "${dependencies[@]}"; do
     	if ! hash "$package" 2>/dev/null; then
         	printf "${blue}%s${endc} ${green}%s${endc}\n" "==>" "Installing "$package" ..."
-        	apt-get update && apt-get install -y "$package"
+        	brew update && brew install -y "$package"
         	printf "${cyan}%s${endc} ${green}%s${endc}\n" "[ OK ]" ""$package" installed"
     	else
         	printf "${cyan}%s${endc} ${green}%s${endc}\n" \
