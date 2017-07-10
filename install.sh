@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# install.sh - kalitorify installer
+# install.sh - mactorify installer
 # Copyright (C) 2015, 2017 Brainfuck
 #
-# This file is part of kalitorify
+# This file is part of mactorify
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 # program informations
 PROGRAM="install.sh"
 VERSION="0.3.0"
-AUTHOR="Brainfuck"
+AUTHOR="Brainfuck / Marnu Lombard"
 
 # define colors
 export red=$'\e[0;91m'
@@ -39,7 +39,7 @@ printf "${red}
 #
 # :: "$PROGRAM"
 # :: Version: "$VERSION"
-# :: Installer script for kalitorify
+# :: Installer script for mactorify
 # :: Author: "$AUTHOR"
 # 
 ####################################${endc}\n\n"
@@ -78,25 +78,27 @@ check_required() {
 ## Install program files
 # with 'install' command create directories and copy files
 install_program() {
-    printf "${blue}%s${endc} ${green}%s${endc}\n" "==>" "Install kalitorify..."
+    printf "${blue}%s${endc} ${green}%s${endc}\n" "==>" "Install mactorify..."
     
-    # copy program files on /usr/share/*
-    install -Dm644 "LICENSE" "/usr/share/license/kalitorify/LICENSE"
-    install -Dm644 "README.md" "/usr/share/doc/kalitorify/README.md"
+    # copy program files on /usr/local/share/*
+    mkdir -p /usr/local/share/license/mactorify/
+    mkdir -p /usr/local/share/doc/mactorify/
+    install -Dm644 "LICENSE" "/usr/local/share/license/mactorify/LICENSE"
+    install -Dm644 "README.md" "/usr/local/share/doc/mactorify/README.md"
     
     # copy executable file on /usr/local/bin
-    install -Dm755 "kalitorify.sh" "/usr/local/bin/kalitorify"
+    install -Dm755 "mactorify.sh" "/usr/local/bin/mactorify"
 
     # check if program run correctly
-    if hash kalitorify 2>/dev/null; then
+    if hash mactorify 2>/dev/null; then
         printf "${cyan}%s${endc} ${green}%s${endc}\n" \
-            "[ OK ]" "kalitorify succesfully installed"
-        printf "${green}%s${endc}\n" "run command 'kalitorify --start for start program"
+            "[ OK ]" "mactorify succesfully installed"
+        printf "${green}%s${endc}\n" "run command 'mactorify --start for start program"
     else
-        printf "${red}%s${endc}\n" "[ FAILED ] kalitorify cannot start :("
+        printf "${red}%s${endc}\n" "[ FAILED ] mactorify cannot start :("
         printf "${green}%s${endc}\n" "If you are in trouble read NOTES on file README"
         printf "${green}%s${endc}\n" \ 
-            "Report issues at: https://github.com/brainfucksec/kalitorify/issues"
+            "Report issues at: https://github.com/marnulombard/mactorify/issues"
     fi
 }
 
@@ -106,7 +108,7 @@ main() {
     banner
     check_root
     printf "${blue}%s${endc}" "==> " 
-        read -n 1 -s -p "${green}Press any key to install kalitorify${endc} "    
+        read -n 1 -s -p "${green}Press any key to install mactorify${endc} "    
     check_required
     install_program
 }
