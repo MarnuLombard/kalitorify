@@ -94,38 +94,36 @@ print_version() {
 }
 
 
-## Functions for firewall ufw
-# check ufw status: 
+## Functions for socketfilterfw
+# check socketfilterfw status: 
 # if installed and/or active disable it
 # if aren't installed, do nothing, don't display
 # nothing to user, simply jump to next function
-disable_ufw() {
-	if hash ufw 2>/dev/null; then
-    	if ufw status | grep -q active$; then
-        	printf "${blue}%s${endc} ${green}%s${endc}\n" \
-                "::" "Firewall ufw is active. disabling... "
-        	ufw disable
-        	sleep 3
-    	else 
-    		ufw status | grep -q inactive$; 
-        	printf "${blue}%s${endc} ${green}%s${endc}\n" \
-                "::" "Firewall ufw is inactive, continue..."  
-    	fi
+disable_socketfilterfw() {
+	if [[ $(/usr/libexec/ApplicationFirewall/socketfilterfw --getblockall) == "Block all DISABLED!" ]]; then
+    	printf "${blue}%s${endc} ${green}%s${endc}\n" \
+            "::" "Firewall socketfilterfw is active. disabling... "
+    	/usr/libexec/ApplicationFirewall/socketfilterfw --setblockall off
+    	sleep 1
+	else
+		printf "${blue}%s${endc} ${green}%s${endc}\n" \
+            "::" "Firewall socketfilterfw is inactive, continue..."  
     fi
 }
 
 
-## enable ufw 
-# if ufw isn't installed, do nothing and jump to
+## enable socketfilterfw 
+# if socketfilterfw isn't installed, do nothing and jump to
 # the next function
-enable_ufw() {
-	if hash ufw 2>/dev/null; then
-    	if ufw status | grep -q inactive$; then
-        	printf "${blue}%s${endc} ${green}%s${endc}\n" \
-                "::" "Enabling firewall ufw..."
-        	ufw enable
-        	sleep 3
-        fi
+enable_socketfilterfw() {
+	if [[ $(/usr/libexec/ApplicationFirewall/socketfilterfw --getblockall) != "Block all DISABLED!" ]]; then
+        printf "${blue}%s${endc} ${green}%s${endc}\n" \
+            "::" "Firewall socketfilterfw is active. disabling... "
+        /usr/libexec/ApplicationFirewall/socketfilterfw --setblockall on
+        sleep 1
+    else
+        printf "${blue}%s${endc} ${green}%s${endc}\n" \
+            "::" "Firewall socketfilterfw is inactive, continue..."  
     fi
 }
 
@@ -135,24 +133,31 @@ enable_ufw() {
 check_default() {
     # check dependencies (tor)
     if ! hash tor 2>/dev/null; then
+
         printf "${red}%s${endc}\n" "[ FAILED ] tor isn't installed, exit";
         exit 1
     fi
 
-    ## Check file "/etc/tor/torrc"
-    grep -q -x 'VirtualAddrNetworkIPv4 10.192.0.0/10' /etc/tor/torrc
+    # check torrc
+    if [[ ! -f /usr/local/etc/tor/torrc ]]; then
+        printf "${blue}%s${endc}\n" "/usr/local/etc/tor/torrc doesn't exist, creating it";
+        mkdir -p /usr/local/etc/tor && touch /usr/local/etc/tor/torrc
+    fi
+
+    ## Check file "/usr/local/etc/tor/torrc"
+    grep -q -x 'VirtualAddrNetworkIPv4 10.192.0.0/10' /usr/local/etc/tor/torrc
     VAR1=$?
 
-    grep -q -x 'AutomapHostsOnResolve 1' /etc/tor/torrc
+    grep -q -x 'AutomapHostsOnResolve 1' /usr/local/etc/tor/torrc
     VAR2=$?
 
-    grep -q -x 'TransPort 9040' /etc/tor/torrc
+    grep -q -x 'TransPort 9040' /usr/local/etc/tor/torrc
     VAR3=$?
 
-    grep -q -x 'SocksPort 9050' /etc/tor/torrc
+    grep -q -x 'SocksPort 9050' /usr/local/etc/tor/torrc
     VAR4=$?
 
-    grep -q -x 'DNSPort 5353' /etc/tor/torrc
+    grep -q -x 'DNSPort 5353' /usr/local/etc/tor/torrc
     VAR5=$?
 
     # if this file is not already set, set it now
@@ -162,9 +167,9 @@ check_default() {
        [[ $VAR4 -ne 0 ]] ||
        [[ $VAR5 -ne 0 ]]; then
         printf "\n${blue}%s${endc} ${green}%s${endc}" 
-            "::" "Setting file: /etc/tor/torrc... "
+            "::" "Setting file: /usr/local/etc/tor/torrc... "
         # backup original file
-        cp -vf /etc/tor/torrc /etc/tor/torrc.backup
+        cp -vf /usr/local/etc/tor/torrc /usr/local/etc/tor/torrc.backup
 
         # write new settings
         echo '## Configuration file for Tor
@@ -192,7 +197,7 @@ VirtualAddrNetworkIPv4 10.192.0.0/10
 AutomapHostsOnResolve 1
 TransPort 9040
 SocksPort 9050
-DNSPort 5353' > /etc/tor/torrc
+DNSPort 5353' > /usr/local/etc/tor/torrc
 # EOF
         printf "${green}%s${endc}\n" "Done"   
     fi
@@ -205,12 +210,12 @@ main() {
     check_root
     check_default
     # check status of tor.service and stop it if is active
-    if systemctl is-active tor.service > /dev/null 2>&1; then
-        systemctl stop tor.service
+    if [[ $(brew services list | grep "tor.*stopped") ]]; then
+        brew services stop tor
     fi
 
     printf "\n${blue}%s${endc} ${green}%s${endc}\n" "::" "Starting Transparent Proxy"
-    disable_ufw
+    disable_socketfilterfw
     sleep 3
     ## Tor Entry Guards
     # delete file: "/var/lib/tor/state"
@@ -218,12 +223,12 @@ main() {
     # When tor.service starting, a new file "state" it's generated
     # when you connect to Tor network, a new Tor entry guards will be written on this file.
     printf "${blue}::${endc} ${green}Get fresh Tor entry guards? [y/n]${endc}"
-	read -p "${green}:${endc} " yn
+	read -rp "${green}:${endc} " yn
     case $yn in
         [yY]|[y|Y] )
-            rm -v /var/lib/tor/state
+            rm -v ~/.tor/state
             printf "${cyan}%s${endc} ${green}%s${endc}\n" \
-                "[ OK ]" "When tor.service start, new Tor entry guards will obtained"
+                "[ OK ]" "When tor service starts, new Tor entry guards will obtained"
             ;;
         *)
             ;;
@@ -231,24 +236,11 @@ main() {
 
     # start tor.service
     printf "${blue}%s${endc} ${green}%s${endc}\n" "::" "Start Tor service... "
-    systemctl start tor.service
+    brew services start tor
     sleep 6
    	printf "${cyan}%s${endc} ${green}%s${endc}\n" "[ OK ]" "Tor service is active"
 
    	
-    ## begin iptables settings
-    # save current iptables rules
-    printf "${blue}%s${endc} ${green}%s${endc}" "::" "Backup iptables rules... " 
-    iptables-save > /opt/iptables.backup
-    printf "${green}%s${endc}\n" "Done"
-    sleep 2
-
-    # flush current iptables rules
-    printf "${blue}%s${endc} ${green}%s${endc}" "::" "Flush iptables rules... "    
-    iptables -F
-    iptables -t nat -F    
-    printf "${green}%s${endc}\n" "Done"
-
     # configure system's DNS resolver to use Tor's DNSPort on the loopback interface
     printf "${blue}%s${endc} ${green}%s${endc}\n" \
         "::" "Configure system's DNS resolver to use Tor's DNSPort"
@@ -320,7 +312,7 @@ stop() {
 
     # stop tor.service
     printf "${blue}%s${endc} ${green}%s${endc}" "::" "Stop tor service... "
-    systemctl stop tor.service    
+    brew services stop tor.service    
     printf "${green}%s${endc}\n" "Done"
     sleep 4
 
@@ -332,7 +324,7 @@ stop() {
     sleep 2
 
     # enable firewall ufw
-    enable_ufw
+    enable_socketfilterfw
     printf "${cyan}%s${endc} ${green}%s${endc}\n" "[-]" "Transparent Proxy stopped"
 }
 
@@ -360,7 +352,7 @@ check_status() {
     check_root
     # check status of tor.service
     printf "${blue}%s${endc} ${green}%s${endc}\n" "::" "Check current status of Tor service"
-    if systemctl is-active tor.service > /dev/null 2>&1; then
+    if brew services is-active tor.service > /dev/null 2>&1; then
         printf "${cyan}%s${endc} ${green}%s${endc}\n" "[ OK ]" "Tor service is active"
     else
         printf "${red}%s${endc}\n" "[-] Tor service is not running!"
@@ -376,7 +368,7 @@ check_status() {
 restart() {
     check_root
     printf "${blue}%s${endc} ${green}%s${endc}\n" "::" "Restart Tor service and change IP"
-    ## systemctl restart or stop/start not work any more 
+    ## brew services restart or stop/start not work any more 
     # avoid errors with old "service reload" command
     service tor reload
     sleep 3   
