@@ -1,9 +1,7 @@
-## Kalitorify v1.8.0
+## Mactorify v1.8.0
 
-### Transparent proxy through Tor for Kali Linux OS
-
- 
-
+### Transparent proxy through Tor for MacOS
+#### Fork for MacOS of [brainfucksec/kalitorify](https://github.com/brainfucksec/kalitorify)
 
 ### Install
 
@@ -11,24 +9,22 @@
 ```bash
 sudo apt-get update && sudo apt-get dist-upgrade -y
 
-git clone https://github.com/BrainfuckSec/archtorify
+git clone https://github.com/MarnuLombard/mactorify
 
-cd kalitorify/
+cd mactorify/
 chmod +x install.sh
 ./install.sh
 ```
-
-
 
 
 ### Start program
 
 #### Use help argument or run the program without arguments for help menu':
 ```bash
-./kalitorify.sh --help
+mactorify --help
 ...
 
-└───╼ ./kalitorify --argument
+└───╼ mactorify --argument
 
 Arguments available:
 
@@ -45,19 +41,17 @@ Arguments available:
 
 #### Start Transparent Proxy with --start argument
 ```bash
-./kalitorify.sh --start
+mactorify --start
 ...
 
 :: Starting Transparent Proxy
 
 ```
-
-
  
 
 #### [ NOTES ]
 
-##### Kalitorify is KISS version of Parrot AnonSurf Module, developed by "Pirates' Crew" of FrozenBox - https://github.com/parrotsec/anonsurf
+##### Mactorify is KISS version of Parrot AnonSurf Module, developed by "Pirates' Crew" of FrozenBox - https://github.com/parrotsec/anonsurf
 
 ##### Please note that this program isn't a final solution for a setup of anonimity at 100%, for more information about Tor configurations please read these docs:
 
