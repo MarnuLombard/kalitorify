@@ -61,7 +61,6 @@ virtual_addr_net="10.192.0.0/10"
 # LAN destinations that shouldn't be routed through Tor
 non_tor="127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 
-
 # print banner
 banner() {
 printf "${white}
@@ -210,6 +209,18 @@ DNSPort 5353' > /usr/local/etc/tor/torrc
     fi
 }
 
+## Reset changes we've made
+reset() {
+    # DNS backup exists and we are currently resolving to 127.0.0.1
+    if [[ -f ~/.tor/dns && $(networksetup -getdnsservers "$(get_network_iface)") = 127.0.0.1 ]]; then
+        networksetup -setdnsservers "$(tr -u '\n' ' ' < ~/.tor/dns | sed 's/%//g')";
+    fi
+}
+
+## Get current network interface (far more complicated than it needs to be)
+get_network_iface() {
+    return "$(current-network-iface | head -n1)"
+}
 
 ## Start transparent proxy
 main() {
@@ -217,13 +228,15 @@ main() {
     check_root
     check_default
     # check status of tor.service and stop it if is active
-    if [[ $(grep 'tor.*stopped' --exclude='tor.*started') ]]; then
+    if [[ ! -z $(brew services list| grep -q 'tor.*started') ]]; then
+        printf "\n${blue}%s${endc} ${green}%s${endc}\n" "::" "Stopping tor"
         brew services stop tor
     fi
 
     printf "\n${blue}%s${endc} ${green}%s${endc}\n" "::" "Starting Transparent Proxy"
     disable_socketfilterfw
     sleep 3
+
     ## Tor Entry Guards
     # delete file: "/var/lib/tor/state"
     #
@@ -248,11 +261,18 @@ main() {
    	printf "${cyan}%s${endc} ${green}%s${endc}\n" "[ OK ]" "Tor service is active"
 
    	
-    # configure system's DNS resolver to use Tor's DNSPort on the loopback interface
+    # Configure system's DNS resolver to use Tor's DNSPort on the loopback interface
+    # Mac{Os| OSX} does not respect resolve.conf, use `networksetup -setdnsservers` instead
+    printf "${blue}%s${endc} ${green}%s${endc}\n" \
+        "::" "Backing up dns for ${NETWORK_IFACE}"
+    
+    NETWORK_IFACE=$(get_network_iface)
+    # Back it up for when we go down
+    networksetup -getdnsservers "$NETWORK_IFACE" > ~/.tor/dns
+
     printf "${blue}%s${endc} ${green}%s${endc}\n" \
         "::" "Configure system's DNS resolver to use Tor's DNSPort"
-    cp -vf /etc/resolv.conf /opt/resolv.conf.backup
-    echo -e 'nameserver 127.0.0.1' > /etc/resolv.conf
+    networksetup -getdnsservers "$NETWORK_IFACE" 127.0.0.1
     sleep 2
 
     # write new iptables rules
@@ -297,7 +317,6 @@ main() {
     printf "${cyan}%s${endc} ${green}%s${endc}\n" \
     	"[ INFO ]" "Use --status argument for check the program status whatever you need"
 }
-
 
 ## Stop transparent proxy
 stop() {
@@ -436,3 +455,6 @@ help_menu
 exit 1
 
 esac
+
+## In case we fail, make sure we reset everything back to normal
+trap reset EXIT
