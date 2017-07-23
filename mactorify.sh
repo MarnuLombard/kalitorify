@@ -26,12 +26,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Fail early, fail hard
+# see: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
 
 # Program's informations
-PROGRAM="kalitorify"
-VERSION="1.8.1"
-AUTHOR="Brainfuck"
-GIT_URL="https://github.com/brainfucksec/kalitorify"
+PROGRAM="mactorify"
+VERSION="1.8.0"
+AUTHOR="Brainfuck/Marnu Lombard"
+GIT_URL="https://github.com/MarnuLombard/mactorify" 
 
 # define colors
 export red=$'\e[0;91m'
@@ -61,15 +65,18 @@ non_tor="127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 # print banner
 banner() {
 printf "${white}
-*****************************************
-*                                       *
-*  _____     _ _ _           _ ___      *
-* |  |  |___| |_| |_ ___ ___|_|  _|_ _  *
-* |    -| .'| | |  _| . |  _| |  _| | | *
-* |__|__|__,|_|_|_| |___|_| |_|_| |_  | *
-*                                 |___| *
-*                                       *
-*****************************************
+************************************************
+*                                              *
+*  __  __         _______         _  __        *
+* |  \/  |       |__   __|       (_)/ _|       *
+* | \  / | __ _  ___| | ___  _ __ _| |_ _   _  *
+* | |\/| |/ _' |/ __| |/ _ \| '__| |  _| | | | *
+* | |  | | (_| | (__| | (_) | |  | | | | |_| | *
+* |_|  |_|\__,_|\___|_|\___/|_|  |_|_|  \__, | *
+*                                        __/ | *
+*                                       |___/  *
+*                                              *
+************************************************
 
 Version: "$VERSION"
 Author: "$AUTHOR"
@@ -210,7 +217,7 @@ main() {
     check_root
     check_default
     # check status of tor.service and stop it if is active
-    if [[ $(brew services list | grep "tor.*stopped") ]]; then
+    if [[ $(grep 'tor.*stopped' --exclude='tor.*started') ]]; then
         brew services stop tor
     fi
 

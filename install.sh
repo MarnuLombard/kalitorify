@@ -18,9 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Fail early, fail hard
+# see: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
 # program informations
 PROGRAM="install.sh"
-VERSION="0.3.0"
+VERSION="1.8.0"
 AUTHOR="Brainfuck / Marnu Lombard"
 
 # define colors
@@ -37,10 +42,10 @@ banner() {
 printf "${red}
 ####################################
 #
-# :: "$PROGRAM"
-# :: Version: "$VERSION"
+# :: $PROGRAM
+# :: Version: $VERSION
 # :: Installer script for mactorify
-# :: Author: "$AUTHOR"
+# :: Author: $AUTHOR
 # 
 ####################################${endc}\n\n"
 }
@@ -83,17 +88,17 @@ install_program() {
     # copy program files on /usr/local/share/*
     mkdir -p /usr/local/share/license/mactorify/
     mkdir -p /usr/local/share/doc/mactorify/
-    install -Dm644 "LICENSE" "/usr/local/share/license/mactorify/LICENSE"
-    install -Dm644 "README.md" "/usr/local/share/doc/mactorify/README.md"
+    install -m644 "LICENSE" "/usr/local/share/license/mactorify/LICENSE"
+    install -m644 "README.md" "/usr/local/share/doc/mactorify/README.md"
     
     # copy executable file on /usr/local/bin
-    install -Dm755 "mactorify.sh" "/usr/local/bin/mactorify"
+    install -m755 "mactorify.sh" "/usr/local/bin/mactorify"
 
     # check if program run correctly
     if hash mactorify 2>/dev/null; then
         printf "${cyan}%s${endc} ${green}%s${endc}\n" \
             "[ OK ]" "mactorify succesfully installed"
-        printf "${green}%s${endc}\n" "run command 'mactorify --start for start program"
+        printf "${green}%s${endc}\n" "run command 'sudo mactorify --start for start program"
     else
         printf "${red}%s${endc}\n" "[ FAILED ] mactorify cannot start :("
         printf "${green}%s${endc}\n" "If you are in trouble read NOTES on file README"
