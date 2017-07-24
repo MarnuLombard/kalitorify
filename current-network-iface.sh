@@ -30,3 +30,4 @@ else
     exit 1
 fi
 
+#@TODO: refactor to use combination of `route get 8.8.8.8`, `networksetup -listallhardwareports` and a lot of `grep`. Turns out this method is innacurate on reporting of service order
